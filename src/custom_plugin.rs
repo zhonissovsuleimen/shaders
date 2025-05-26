@@ -25,6 +25,9 @@ use bevy::{
   },
 };
 
+use crate::Resolution;
+
+const WORKGROUP_SIZE: u32 = 8;
 pub struct CustomPlugin;
 
 #[derive(Resource)]
@@ -33,6 +36,7 @@ pub struct CustomBindGroup(BindGroup);
 impl Plugin for CustomPlugin {
   fn build(&self, app: &mut bevy::app::App) {
     app.add_plugins(ExtractResourcePlugin::<StorageHandles>::default());
+    app.add_plugins(ExtractResourcePlugin::<Resolution>::default());
 
     let render_app = app.sub_app_mut(RenderApp);
     render_app.add_systems(
@@ -135,6 +139,7 @@ impl render_graph::Node for CustomShaderNode {
     let bind_group = &world.resource::<CustomBindGroup>().0;
     let pipeline_cache = world.resource::<PipelineCache>();
     let pipeline = world.resource::<CustomPipeline>();
+    let resolution = world.resource::<Resolution>();
 
     let mut pass = render_context
       .command_encoder()
@@ -143,8 +148,11 @@ impl render_graph::Node for CustomShaderNode {
     if let Some(pipeline) = pipeline_cache.get_compute_pipeline(pipeline.pipeline) {
       pass.set_bind_group(0, bind_group, &[]);
       pass.set_pipeline(pipeline);
-      // pass.dispatch_workgroups(1, 1, 1);
-      pass.dispatch_workgroups(1280, 720, 1);
+
+      let x = (resolution.0 as u32 + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE;
+      let y = (resolution.1 as u32 + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE;
+      
+      pass.dispatch_workgroups(x, y, 1);
     }
 
     Ok(())
