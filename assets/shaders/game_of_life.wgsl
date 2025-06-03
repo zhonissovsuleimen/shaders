@@ -20,8 +20,8 @@ fn update(
 ) {
   let left_check = id.x % params.buffer_size_x > 0;
   let top_check = id.x / params.buffer_size_x > 0;
-  let right_check = id.x % params.buffer_size_x < params.buffer_size_x - 1;
-  let bottom_check = id.x / params.buffer_size_x < params.buffer_size_y;
+  let right_check = id.x % params.buffer_size_x < params.buffer_size_x - 1u;
+  let bottom_check = id.x / params.buffer_size_x < params.buffer_size_y - 1u;
 
   let y_offset = params.buffer_size_x;
   let me = buffer[id.x];
@@ -85,7 +85,7 @@ fn display(
 
   var color = vec4<f32>(0.0, 0.0, 0.0, 1.0);
   
-  let mask = 1u << offset;
+  let mask = 1u << (31 - offset);
   if ((buffer[id_x + id_y * params.buffer_size_x] & mask) > 0) {
     color = vec4<f32>(1.0, 1.0, 1.0, 1.0);
   }
