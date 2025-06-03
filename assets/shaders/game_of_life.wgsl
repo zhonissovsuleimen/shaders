@@ -11,14 +11,13 @@ struct Params {
 @group(0) @binding(1) var main_image: texture_storage_2d<rgba8unorm, read_write>;
 @group(0) @binding(2) var<storage, read_write> buffer: array<u32>;
 
-const WORKGROUP_SIZE: u32 = 16;
+const COMPUTE_WG_SIZE: u32 = 1024;
+const DISPLAY_WG_SIZE: u32 = 32;
 
-@compute @workgroup_size(WORKGROUP_SIZE)
+@compute @workgroup_size(COMPUTE_WG_SIZE)
 fn update(
   @builtin(global_invocation_id) id: vec3<u32>,
 ) {
-  // if 
-
   let left_check = id.x % params.buffer_size_x > 0;
   let top_check = id.x / params.buffer_size_x > 0;
   let right_check = id.x % params.buffer_size_x < params.buffer_size_x - 1;
@@ -37,23 +36,23 @@ fn update(
 
   storageBarrier();
 
-  for (var i = 1u; i < 31u; i++) {
+  for (var i = 0u; i < 32u; i++) {
     let mask = 1u << i;
-    let left_mask = 1u << (i + 1);
-    let right_mask = 1u << (i - 1);
+    let left_mask = 1u << ((i + 1) % 32u);
+    let right_mask = 1u << ((i + 31) % 32u);
     var count = 0u;
 
     count += u32((top & mask) > 0);
     count += u32((bottom & mask) > 0);
 
-    count += u32((me & left_mask) > 0);
-    count += u32((me & right_mask) > 0);
+    count += u32((ternary(i == 31u, left, me) & left_mask) > 0);
+    count += u32((ternary(i == 0u, right, me )& right_mask) > 0);
 
-    count += u32((top & left_mask) > 0);
-    count += u32((top & right_mask) > 0);
+    count += u32((ternary(i == 31, top_left, top) & left_mask) > 0);
+    count += u32((ternary(i == 0u, top_right, top) & right_mask) > 0);
 
-    count += u32((bottom & left_mask) > 0);
-    count += u32((bottom & right_mask) > 0);
+    count += u32((ternary(i == 31u, bottom_left, bottom) & left_mask) > 0);
+    count += u32((ternary(i == 0u, bottom_right, bottom) & right_mask) > 0);
 
     if (count < 2 || count > 3) {
       buffer[id.x] &= ~mask;
@@ -61,57 +60,9 @@ fn update(
       buffer[id.x] |= mask;
     }
   }
-
-  //case i = 0
-  var mask = 1u;
-  var left_mask = 1u << 1;
-  var right_mask = 1u << 31;
-  var count = 0u;
-
-  count += u32((top & mask) > 0);
-  count += u32((bottom & mask) > 0);
-
-  count += u32((me & left_mask) > 0);
-  count += u32((right & right_mask) > 0);
-
-  count += u32((top & left_mask) > 0);
-  count += u32((top_right & right_mask) > 0);
-
-  count += u32((bottom & left_mask) > 0);
-  count += u32((bottom_right & right_mask) > 0);
-
-  if (count < 2 || count > 3) {
-    buffer[id.x] &= ~mask;
-  } else if count == 3{
-    buffer[id.x] |= mask;
-  }
-
-  //case i = 31
-  mask = 1u << 31;
-  left_mask = 1u;
-  right_mask = 1u << 30;
-  count = 0u;
-
-  count += u32((top & mask) > 0);
-  count += u32((bottom & mask) > 0);
-
-  count += u32((left & left_mask) > 0);
-  count += u32((me & right_mask) > 0);
-
-  count += u32((top_left & left_mask) > 0);
-  count += u32((top & right_mask) > 0);
-
-  count += u32((bottom_left & left_mask) > 0);
-  count += u32((bottom & right_mask) > 0);
-
-  if (count < 2 || count > 3) {
-    buffer[id.x] &= ~mask;
-  } else if count == 3 {
-    buffer[id.x] |= mask;
-  }
 }
 
-@compute @workgroup_size(WORKGROUP_SIZE, WORKGROUP_SIZE)
+@compute @workgroup_size(DISPLAY_WG_SIZE, DISPLAY_WG_SIZE)
 fn display(
   @builtin(global_invocation_id) id: vec3<u32>,
 ) {

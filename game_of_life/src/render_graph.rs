@@ -12,7 +12,8 @@ use crate::{
   pipeline::GLPipeline,
 };
 
-const WORKGROUP_SIZE: u32 = 16;
+const COMPUTE_WG_SIZE: u32 = 1024;
+const DISPLAY_WG_SIZE: u32 = 32;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, RenderLabel)]
 pub struct GLNodeLabel;
@@ -52,9 +53,9 @@ impl render_graph::Node for GLNode {
       return Ok(());
     };
 
-    let compute_wg = (params.buffer_size + WORKGROUP_SIZE - 1) / (WORKGROUP_SIZE);
-    let display_wg_x = (res.0 + WORKGROUP_SIZE - 1) / (WORKGROUP_SIZE);
-    let display_wg_y = (res.1 + WORKGROUP_SIZE - 1) / (WORKGROUP_SIZE);
+    let compute_wg = (params.buffer_size + COMPUTE_WG_SIZE - 1) / (COMPUTE_WG_SIZE);
+    let display_wg_x = (res.0 + DISPLAY_WG_SIZE - 1) / (DISPLAY_WG_SIZE);
+    let display_wg_y = (res.1 + DISPLAY_WG_SIZE - 1) / (DISPLAY_WG_SIZE);
 
     let mut pass = render_context
       .command_encoder()
