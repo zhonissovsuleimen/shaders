@@ -1,16 +1,14 @@
 use bevy::{
-  ecs::world::World,
-  render::{
+  ecs::world::World, render::{
     render_graph::{self, RenderLabel},
     render_resource::{ComputePassDescriptor, PipelineCache},
     renderer::RenderContext,
-  },
-  time::Time,
+  }, time::Time
 };
 
 use crate::{
   bind_group::GLBindGroup,
-  data_structs::{ComputeState, Params, Resolution},
+  data_structs::{ComputeState, Params, Resolution, Telemetry},
   pipeline::GLPipeline,
 };
 
@@ -94,6 +92,15 @@ impl render_graph::Node for GLNode {
           let delta_t = elapsed_secs - self.last_step_time.unwrap();
           if self.target_tps == 0 || delta_t > (1.0 / self.target_tps as f32) {
             *state = ComputeState::STEP;
+
+            let Some(telemetry) = world.get_resource::<Telemetry>() else {
+              return;
+            };
+            let mut data = telemetry.ticks.lock().unwrap();
+            if data.len() == telemetry.ticks_len {
+              data.remove(0);
+            }
+            data.push(delta_t);
           }
         }
       },

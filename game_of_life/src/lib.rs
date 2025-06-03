@@ -3,11 +3,13 @@ mod data_structs;
 mod pipeline;
 mod render_graph;
 
+use std::time::Duration;
+
 use bind_group::{GLBindGroup, prepare_bind_group};
-use data_structs::{ComputeState, MainImage, Params, Resolution};
+use data_structs::{ComputeState, MainImage, Params, Resolution, Telemetry};
 
 use bevy::{
-  app::{Plugin, Startup},
+  app::{Plugin, Startup, Update},
   asset::{Assets, RenderAssetUsages},
   core_pipeline::core_2d::Camera2d,
   ecs::{
@@ -15,7 +17,7 @@ use bevy::{
       IntoScheduleConfigs,
       common_conditions::{not, resource_exists},
     },
-    system::{Commands, ResMut, Single},
+    system::{Commands, Res, ResMut, Single},
   },
   image::Image,
   log::info,
@@ -27,6 +29,7 @@ use bevy::{
     render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
   },
   sprite::Sprite,
+  time::common_conditions::on_timer,
   utils::default,
   window::Window,
 };
@@ -40,6 +43,10 @@ impl Plugin for GameOfLifePlugin {
     info!("Building pipeline");
 
     app.add_systems(Startup, setup);
+    app.add_systems(
+      Update,
+      print_telemetry.run_if(on_timer(Duration::from_millis(1000))),
+    );
 
     app.world_mut().commands().spawn(Camera2d);
 
@@ -47,6 +54,7 @@ impl Plugin for GameOfLifePlugin {
     app.add_plugins(ExtractResourcePlugin::<MainImage>::default());
     app.add_plugins(ExtractResourcePlugin::<Resolution>::default());
     app.add_plugins(ExtractResourcePlugin::<ComputeState>::default());
+    app.add_plugins(ExtractResourcePlugin::<Telemetry>::default());
 
     let render_app = app.sub_app_mut(RenderApp);
 
@@ -73,6 +81,8 @@ impl Plugin for GameOfLifePlugin {
 }
 
 fn setup(mut commands: Commands, window: Single<&Window>, mut image_assets: ResMut<Assets<Image>>) {
+  commands.insert_resource(Telemetry::default());
+
   let window_width = window.width();
   let window_height = window.height();
   commands.insert_resource(Resolution(window_width as u32, window_height as u32));
@@ -117,4 +127,12 @@ fn setup(mut commands: Commands, window: Single<&Window>, mut image_assets: ResM
     ..default()
   },));
   commands.insert_resource(MainImage(image_handle));
+}
+
+fn print_telemetry(telemetry: Res<Telemetry>) {
+  let data = telemetry.ticks.lock().unwrap();
+  let avg_s = data.iter().sum::<f32>() / data.len() as f32;
+  let avg_ms = avg_s * 1000.0;
+  let avg_hz = 1.0 / avg_s;
+  info!("Average tick is {avg_ms:.2} milliseconds ({avg_hz:.2} ticks per second)");
 }

@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use bevy::{
   asset::Handle,
   ecs::resource::Resource,
@@ -28,4 +30,20 @@ pub enum ComputeState {
   #[default]
   STEP,
   WAIT,
+}
+
+#[derive(Resource, Clone, ExtractResource)]
+pub struct Telemetry {
+  pub ticks_len: usize,
+  pub ticks: Arc<Mutex<Vec<f32>>>,
+}
+
+impl Default for Telemetry {
+  fn default() -> Self {
+    let len = 100;
+    Self {
+      ticks_len: len,
+      ticks: Arc::new(Mutex::new(Vec::<f32>::with_capacity(len))),
+    }
+  }
 }
