@@ -40,7 +40,7 @@ pub struct Telemetry {
 
 impl Default for Telemetry {
   fn default() -> Self {
-    let len = 100;
+    let len = 1000;
     Self {
       ticks_len: len,
       ticks: Arc::new(Mutex::new(Vec::<f32>::with_capacity(len))),
