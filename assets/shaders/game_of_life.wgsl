@@ -46,7 +46,7 @@ fn update(
     count += u32((bottom & mask) > 0);
 
     count += u32((ternary(i == 31u, left, me) & left_mask) > 0);
-    count += u32((ternary(i == 0u, right, me )& right_mask) > 0);
+    count += u32((ternary(i == 0u, right, me) & right_mask) > 0);
 
     count += u32((ternary(i == 31, top_left, top) & left_mask) > 0);
     count += u32((ternary(i == 0u, top_right, top) & right_mask) > 0);
@@ -55,9 +55,21 @@ fn update(
     count += u32((ternary(i == 0u, bottom_right, bottom) & right_mask) > 0);
 
     if (count < 2 || count > 3) {
-      buffer[id.x] &= ~mask;
+      if i == 31u {
+        buffer[id.x - 1] &= ~left_mask;
+      } else if i == 0u {
+        buffer[id.x + 1] &= ~right_mask;
+      } else {
+        buffer[id.x] &= ~mask;
+      }
     } else if count == 3 {
-      buffer[id.x] |= mask;
+      if i == 0u {
+        buffer[id.x - 1] |= left_mask;
+      } else if i == 31u {
+        buffer[id.x + 1] |= right_mask;
+      } else {
+        buffer[id.x] |= mask;
+      }
     }
   }
 }
