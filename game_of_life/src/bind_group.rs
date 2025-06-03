@@ -1,0 +1,66 @@
+use bevy::{
+  ecs::{
+    resource::Resource,
+    system::{Commands, Res},
+  },
+  render::{
+    render_asset::RenderAssets,
+    render_resource::{BindGroup, BindGroupEntries, BufferInitDescriptor, BufferUsages},
+    renderer::RenderDevice,
+    texture::GpuImage,
+  },
+};
+
+use crate::{
+  data_structs::{MainImage, Params},
+  pipeline::GLPipeline,
+};
+
+#[derive(Resource)]
+pub struct GLBindGroup(pub BindGroup);
+
+pub fn prepare_bind_group(
+  mut commands: Commands,
+  pipeline: Res<GLPipeline>,
+  gpu_images: Res<RenderAssets<GpuImage>>,
+  device: Res<RenderDevice>,
+  params: Res<Params>,
+  main_image: Res<MainImage>,
+) {
+  if let Some(main_image) = gpu_images.get(&main_image.0) {
+    let params_buffer = device.create_buffer_with_data(&BufferInitDescriptor {
+      label: None,
+      contents: bytemuck::bytes_of(&*params),
+      usage: BufferUsages::COPY_DST | BufferUsages::UNIFORM,
+    });
+
+    let mut buffer_input = vec![0u32; params.buffer_size as usize];
+
+    for i in 0..params.buffer_size {
+      for j in 0..32 {
+        let rnd = rand::random_range(0.0..1.0);
+        if rnd > 0.9 {
+          buffer_input[i as usize] |= 1 << j;
+        }
+      }
+    }
+
+    let buffer = device.create_buffer_with_data(&BufferInitDescriptor {
+      label: None,
+      contents: bytemuck::cast_slice(&buffer_input.clone()),
+      usage: BufferUsages::COPY_DST | BufferUsages::STORAGE,
+    });
+
+    let bind_group = device.create_bind_group(
+      None,
+      &pipeline.layout,
+      &BindGroupEntries::sequential((
+        params_buffer.as_entire_binding(),
+        &main_image.texture_view,
+        buffer.as_entire_binding(),
+      )),
+    );
+
+    commands.insert_resource(GLBindGroup(bind_group));
+  }
+}

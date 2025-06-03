@@ -5,7 +5,10 @@ edition = "2024"
 
 
 [workspace]
-members = ["cellular_automata"]
+members = [
+  "cellular_automata", 
+  "game_of_life"
+]
 
 [workspace.dependencies]
 bevy = "0.16.0"
@@ -22,3 +25,4 @@ opt-level = 3
 [dependencies]
 bevy = { workspace = true }
 cellular_automata = { path = "cellular_automata" }
+game_of_life = { path = "game_of_life" }
