@@ -54,22 +54,13 @@ fn update(
     count += u32((ternary(i == 31u, bottom_left, bottom) & left_mask) > 0);
     count += u32((ternary(i == 0u, bottom_right, bottom) & right_mask) > 0);
 
+    let buffer_id = ternary(i == 31u, id.x - 1, ternary(i == 0u, id.x + 1, id.x));
+    let final_mask = ternary(i == 31u, left_mask, ternary(i == 0u, right_mask, mask));
+
     if (count < 2 || count > 3) {
-      if i == 31u {
-        buffer[id.x - 1] &= ~left_mask;
-      } else if i == 0u {
-        buffer[id.x + 1] &= ~right_mask;
-      } else {
-        buffer[id.x] &= ~mask;
-      }
+      buffer[buffer_id] &= ~final_mask;
     } else if count == 3 {
-      if i == 0u {
-        buffer[id.x - 1] |= left_mask;
-      } else if i == 31u {
-        buffer[id.x + 1] |= right_mask;
-      } else {
-        buffer[id.x] |= mask;
-      }
+      buffer[buffer_id] |= final_mask;
     }
   }
 }
