@@ -21,14 +21,14 @@ pub struct GLNodeLabel;
 
 pub struct GLNode {
   last_step_time: Option<f32>,
-  ticks_per_s: u32,
+  target_tps: u32,
 }
 
 impl Default for GLNode {
   fn default() -> Self {
     Self {
       last_step_time: None,
-      ticks_per_s: 1000,
+      target_tps: 0,
     }
   }
 }
@@ -92,7 +92,7 @@ impl render_graph::Node for GLNode {
         }
         ComputeState::WAIT => {
           let delta_t = elapsed_secs - self.last_step_time.unwrap();
-          if delta_t > (1.0 / self.ticks_per_s as f32) {
+          if self.target_tps == 0 || delta_t > (1.0 / self.target_tps as f32) {
             *state = ComputeState::STEP;
           }
         }
