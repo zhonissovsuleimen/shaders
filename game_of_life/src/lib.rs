@@ -94,8 +94,8 @@ fn setup(mut commands: Commands, window: Single<&Window>, mut image_assets: ResM
   let window_height = window.height();
   commands.insert_resource(Resolution(window_width as u32, window_height as u32));
 
-  let cell_count_x = 3200;
-  let cell_count_y = 3200;
+  let cell_count_x = 10000;
+  let cell_count_y = 10000;
   let buffer_size_x = (cell_count_x + 31) / 32;
   let buffer_size_y = cell_count_y;
   let buffer_size = buffer_size_x * buffer_size_y;
