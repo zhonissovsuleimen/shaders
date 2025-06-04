@@ -81,15 +81,15 @@ fn display(
   let id_x = adjusted_x / 32;
   let id_y = adjusted_y;
   let offset = adjusted_x % 32;
-
-  if (id_x >= params.buffer_size_x || id_y >= params.buffer_size_y) {
-    return;
-  }
+  let mask = 1u << (31 - offset);
+  let cell_alive = (buffer[id_x + id_y * params.buffer_size_x] & mask) > 0;
+  let outside_bounds = id_x >= params.buffer_size_x || id_y >= params.buffer_size_y;
 
   var color = vec4<f32>(0.0, 0.0, 0.0, 1.0);
-  
-  let mask = 1u << (31 - offset);
-  if ((buffer[id_x + id_y * params.buffer_size_x] & mask) > 0) {
+
+  if (outside_bounds) {
+    color = vec4<f32>(1.0, 0.0, 0.0, 1.0);
+  } else if (cell_alive) {
     color = vec4<f32>(1.0, 1.0, 1.0, 1.0);
   }
 

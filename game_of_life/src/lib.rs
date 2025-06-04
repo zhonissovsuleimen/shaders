@@ -152,6 +152,6 @@ fn update_params(mut params: ResMut<Params>, mut mouse_events: EventReader<Mouse
     };
 
     params.zoom *= 1.0 + scroll_amount;
-    params.zoom = params.zoom.clamp(1.0, 100.0);
+    params.zoom = params.zoom.clamp(0.1, 100.0);
   }
 }
