@@ -75,9 +75,12 @@ fn display(
     return;
   }
 
-  let id_x = id.x / 32;
-  let id_y = id.y;
-  let offset = id.x % 32;
+  let adjusted_x = u32(f32(id.x) / params.zoom);
+  let adjusted_y = u32(f32(id.y) / params.zoom);
+
+  let id_x = adjusted_x / 32;
+  let id_y = adjusted_y;
+  let offset = adjusted_x % 32;
 
   if (id_x >= params.buffer_size_x || id_y >= params.buffer_size_y) {
     return;

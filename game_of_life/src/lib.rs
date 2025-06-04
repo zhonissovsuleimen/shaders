@@ -13,6 +13,7 @@ use bevy::{
   asset::{Assets, RenderAssetUsages},
   core_pipeline::core_2d::Camera2d,
   ecs::{
+    event::EventReader,
     schedule::{
       IntoScheduleConfigs,
       common_conditions::{not, resource_exists},
@@ -20,6 +21,7 @@ use bevy::{
     system::{Commands, Res, ResMut, Single},
   },
   image::Image,
+  input::mouse::{MouseScrollUnit, MouseWheel},
   log::info,
   math::Vec2,
   render::{
@@ -36,6 +38,8 @@ use bevy::{
 use pipeline::GLPipeline;
 use render_graph::{GLNode, GLNodeLabel};
 
+use crate::{bind_group::sync_params, data_structs::GpuParamsHandle};
+
 pub struct GameOfLifePlugin;
 
 impl Plugin for GameOfLifePlugin {
@@ -47,6 +51,7 @@ impl Plugin for GameOfLifePlugin {
       Update,
       print_telemetry.run_if(on_timer(Duration::from_millis(1000))),
     );
+    app.add_systems(Update, update_params);
 
     app.world_mut().commands().spawn(Camera2d);
 
@@ -61,9 +66,11 @@ impl Plugin for GameOfLifePlugin {
     info!("Preparing bind groups");
     render_app.add_systems(
       Render,
-      prepare_bind_group
-        .in_set(RenderSet::PrepareBindGroups)
-        .run_if(not(resource_exists::<GLBindGroup>)),
+      (
+        prepare_bind_group.run_if(not(resource_exists::<GLBindGroup>)),
+        sync_params.run_if(resource_exists::<GpuParamsHandle>),
+      )
+        .in_set(RenderSet::PrepareBindGroups),
     );
 
     info!("Preparing render graph node");
@@ -135,4 +142,16 @@ fn print_telemetry(telemetry: Res<Telemetry>) {
   let avg_ms = avg_s * 1000.0;
   let avg_hz = 1.0 / avg_s;
   info!("Average tick is {avg_ms:.2} milliseconds ({avg_hz:.2} ticks per second)");
+}
+
+fn update_params(mut params: ResMut<Params>, mut mouse_events: EventReader<MouseWheel>) {
+  for event in mouse_events.read() {
+    let scroll_amount = match event.unit {
+      MouseScrollUnit::Line => event.y * 0.1,
+      MouseScrollUnit::Pixel => event.y * 0.001,
+    };
+
+    params.zoom *= 1.0 + scroll_amount;
+    params.zoom = params.zoom.clamp(1.0, 100.0);
+  }
 }

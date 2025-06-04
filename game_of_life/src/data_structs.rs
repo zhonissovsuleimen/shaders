@@ -4,7 +4,7 @@ use bevy::{
   asset::Handle,
   ecs::resource::Resource,
   image::Image,
-  render::{extract_resource::ExtractResource, render_resource::ShaderType},
+  render::{extract_resource::ExtractResource, render_resource::{Buffer, ShaderType}},
 };
 use bytemuck::{Pod, Zeroable};
 
@@ -21,6 +21,10 @@ pub struct Params {
   pub offset_y: u32,
   pub zoom: f32,
 }
+
+#[derive(Resource)]
+pub struct GpuParamsHandle(pub Buffer);
+
 
 #[derive(Resource, Clone, ExtractResource)]
 pub struct Resolution(pub u32, pub u32);

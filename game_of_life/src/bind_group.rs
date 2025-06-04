@@ -6,13 +6,13 @@ use bevy::{
   render::{
     render_asset::RenderAssets,
     render_resource::{BindGroup, BindGroupEntries, BufferInitDescriptor, BufferUsages},
-    renderer::RenderDevice,
+    renderer::{RenderDevice, RenderQueue},
     texture::GpuImage,
   },
 };
 
 use crate::{
-  data_structs::{MainImage, Params},
+  data_structs::{GpuParamsHandle, MainImage, Params},
   pipeline::GLPipeline,
 };
 
@@ -34,20 +34,20 @@ pub fn prepare_bind_group(
       usage: BufferUsages::COPY_DST | BufferUsages::UNIFORM,
     });
 
-    let mut buffer_input = vec![0u32; params.buffer_size as usize];
+    let mut data_buffer = vec![0u32; params.buffer_size as usize];
 
     for i in 0..params.buffer_size {
       for j in 0..32 {
         let rnd = rand::random_range(0.0..1.0);
         if rnd > 0.9 {
-          buffer_input[i as usize] |= 1 << j;
+          data_buffer[i as usize] |= 1 << j;
         }
       }
     }
 
     let buffer = device.create_buffer_with_data(&BufferInitDescriptor {
       label: None,
-      contents: bytemuck::cast_slice(&buffer_input.clone()),
+      contents: bytemuck::cast_slice(&data_buffer.clone()),
       usage: BufferUsages::COPY_DST | BufferUsages::STORAGE,
     });
 
@@ -62,5 +62,14 @@ pub fn prepare_bind_group(
     );
 
     commands.insert_resource(GLBindGroup(bind_group));
+    commands.insert_resource(GpuParamsHandle(params_buffer));
   }
+}
+
+pub fn sync_params(
+  params: Res<Params>,
+  gpu_params_handle: Res<GpuParamsHandle>,
+  render_queue: Res<RenderQueue>,
+) {
+  render_queue.write_buffer(&gpu_params_handle.0, 0, bytemuck::bytes_of(&*params));
 }
