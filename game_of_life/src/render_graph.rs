@@ -1,14 +1,16 @@
 use bevy::{
-  ecs::world::World, render::{
+  ecs::world::World,
+  render::{
     render_graph::{self, RenderLabel},
     render_resource::{ComputePassDescriptor, PipelineCache},
     renderer::RenderContext,
-  }, time::Time
+  },
+  time::Time,
 };
 
 use crate::{
   bind_group::GLBindGroup,
-  data_structs::{ComputeState, Params, Resolution, Telemetry},
+  data_structs::{ComputeState, Params, Telemetry},
   pipeline::GLPipeline,
 };
 
@@ -27,7 +29,7 @@ impl Default for GLNode {
   fn default() -> Self {
     Self {
       last_step_time: None,
-      target_tps: 0,
+      target_tps: 10,
     }
   }
 }
@@ -49,13 +51,10 @@ impl render_graph::Node for GLNode {
     let Some(params) = world.get_resource::<Params>() else {
       return Ok(());
     };
-    let Some(res) = world.get_resource::<Resolution>() else {
-      return Ok(());
-    };
 
     let compute_wg = (params.buffer_size + COMPUTE_WG_SIZE - 1) / (COMPUTE_WG_SIZE);
-    let display_wg_x = (res.0 + DISPLAY_WG_SIZE - 1) / (DISPLAY_WG_SIZE);
-    let display_wg_y = (res.1 + DISPLAY_WG_SIZE - 1) / (DISPLAY_WG_SIZE);
+    let display_wg_x = (params.resolution_x + DISPLAY_WG_SIZE - 1) / (DISPLAY_WG_SIZE);
+    let display_wg_y = (params.resolution_y + DISPLAY_WG_SIZE - 1) / (DISPLAY_WG_SIZE);
 
     let mut pass = render_context
       .command_encoder()

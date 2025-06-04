@@ -6,7 +6,7 @@ mod render_graph;
 use std::time::Duration;
 
 use bind_group::{GLBindGroup, prepare_bind_group};
-use data_structs::{ComputeState, MainImage, Params, Resolution, Telemetry};
+use data_structs::{ComputeState, MainImage, Params, Telemetry};
 
 use bevy::{
   app::{Plugin, Startup, Update},
@@ -57,7 +57,6 @@ impl Plugin for GameOfLifePlugin {
 
     app.add_plugins(ExtractResourcePlugin::<Params>::default());
     app.add_plugins(ExtractResourcePlugin::<MainImage>::default());
-    app.add_plugins(ExtractResourcePlugin::<Resolution>::default());
     app.add_plugins(ExtractResourcePlugin::<ComputeState>::default());
     app.add_plugins(ExtractResourcePlugin::<Telemetry>::default());
 
@@ -90,29 +89,32 @@ impl Plugin for GameOfLifePlugin {
 fn setup(mut commands: Commands, window: Single<&Window>, mut image_assets: ResMut<Assets<Image>>) {
   commands.insert_resource(Telemetry::default());
 
-  let window_width = window.width();
-  let window_height = window.height();
-  commands.insert_resource(Resolution(window_width as u32, window_height as u32));
-
+  let resolution_x = window.physical_width();
+  let resolution_y = window.physical_height();
+  
   let cell_count_x = 10000;
   let cell_count_y = 10000;
   let buffer_size_x = (cell_count_x + 31) / 32;
   let buffer_size_y = cell_count_y;
   let buffer_size = buffer_size_x * buffer_size_y;
+  let center_x = cell_count_x / 2;
+  let center_y = cell_count_y / 2;
 
   commands.insert_resource(Params {
     buffer_size,
     buffer_size_x,
     buffer_size_y,
-    offset_x: 0,
-    offset_y: 0,
-    zoom: 1.0,
+    resolution_x,
+    resolution_y,
+    center_x,
+    center_y,
+    zoom: 4.0,
   });
 
   let mut image = Image::new_fill(
     Extent3d {
-      width: window_width as u32,
-      height: window_height as u32,
+      width: resolution_x,
+      height: resolution_y,
       depth_or_array_layers: 1,
     },
     TextureDimension::D2,
@@ -128,8 +130,8 @@ fn setup(mut commands: Commands, window: Single<&Window>, mut image_assets: ResM
   commands.spawn((Sprite {
     image: image_handle.clone(),
     custom_size: Some(Vec2 {
-      x: window_width as f32,
-      y: window_height as f32,
+      x: resolution_x as f32,
+      y: resolution_y as f32,
     }),
     ..default()
   },));

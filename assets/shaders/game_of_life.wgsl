@@ -2,8 +2,10 @@ struct Params {
   buffer_size_x: u32,
   buffer_size_y: u32,
   buffer_size: u32,
-  offset_x: u32,
-  offset_y: u32,
+  center_x: u32,
+  center_y: u32,
+  resolution_x: u32,
+  resolution_y: u32,
   zoom: f32,
 }
 
@@ -75,15 +77,18 @@ fn display(
     return;
   }
 
-  let adjusted_x = u32(f32(id.x) / params.zoom);
-  let adjusted_y = u32(f32(id.y) / params.zoom);
+  let adjusted_x = f32(params.center_x) + (f32(id.x) - f32(params.resolution_x) * 0.5) / params.zoom;
+  let adjusted_y = f32(params.center_y) + (f32(id.y) - f32(params.resolution_y) * 0.5) / params.zoom;
+  let outside_bounds = adjusted_x < 0.0 
+    || adjusted_y < 0.0 
+    || adjusted_x >= 32.0 * f32(params.buffer_size_x) 
+    || adjusted_y >= f32(params.buffer_size_y);
 
-  let id_x = adjusted_x / 32;
-  let id_y = adjusted_y;
-  let offset = adjusted_x % 32;
-  let mask = 1u << (31 - offset);
+  let id_x = u32(adjusted_x) / 32;
+  let id_y = u32(adjusted_y);
+  let offset = u32(adjusted_x) % 32;
+  let mask = 1u << (31u - offset);
   let cell_alive = (buffer[id_x + id_y * params.buffer_size_x] & mask) > 0;
-  let outside_bounds = id_x >= params.buffer_size_x || id_y >= params.buffer_size_y;
 
   var color = vec4<f32>(0.0, 0.0, 0.0, 1.0);
 
