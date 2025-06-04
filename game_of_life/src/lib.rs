@@ -21,7 +21,10 @@ use bevy::{
     system::{Commands, Res, ResMut, Single},
   },
   image::Image,
-  input::mouse::{MouseScrollUnit, MouseWheel},
+  input::{
+    ButtonInput, ButtonState,
+    mouse::{MouseButton, MouseButtonInput, MouseScrollUnit, MouseWheel},
+  },
   log::info,
   math::Vec2,
   render::{
@@ -38,7 +41,10 @@ use bevy::{
 use pipeline::GLPipeline;
 use render_graph::{GLNode, GLNodeLabel};
 
-use crate::{bind_group::sync_params, data_structs::GpuParamsHandle};
+use crate::{
+  bind_group::sync_params,
+  data_structs::{GpuParamsHandle, MouseData},
+};
 
 pub struct GameOfLifePlugin;
 
@@ -51,7 +57,7 @@ impl Plugin for GameOfLifePlugin {
       Update,
       print_telemetry.run_if(on_timer(Duration::from_millis(1000))),
     );
-    app.add_systems(Update, update_params);
+    app.add_systems(Update, handle_mouse_input);
 
     app.world_mut().commands().spawn(Camera2d);
 
@@ -87,18 +93,19 @@ impl Plugin for GameOfLifePlugin {
 }
 
 fn setup(mut commands: Commands, window: Single<&Window>, mut image_assets: ResMut<Assets<Image>>) {
+  commands.insert_resource(MouseData::default());
   commands.insert_resource(Telemetry::default());
 
   let resolution_x = window.physical_width();
   let resolution_y = window.physical_height();
-  
+
   let cell_count_x = 10000;
   let cell_count_y = 10000;
   let buffer_size_x = (cell_count_x + 31) / 32;
   let buffer_size_y = cell_count_y;
   let buffer_size = buffer_size_x * buffer_size_y;
-  let center_x = cell_count_x / 2;
-  let center_y = cell_count_y / 2;
+  let center_x = cell_count_x as f32 / 2.0;
+  let center_y = cell_count_y as f32 / 2.0;
 
   commands.insert_resource(Params {
     buffer_size,
@@ -146,8 +153,14 @@ fn print_telemetry(telemetry: Res<Telemetry>) {
   info!("Average tick is {avg_ms:.2} milliseconds ({avg_hz:.2} ticks per second)");
 }
 
-fn update_params(mut params: ResMut<Params>, mut mouse_events: EventReader<MouseWheel>) {
-  for event in mouse_events.read() {
+fn handle_mouse_input(
+  mut params: ResMut<Params>,
+  mut wheel_events: EventReader<MouseWheel>,
+  button_input: Res<ButtonInput<MouseButton>>,
+  window: Single<&Window>,
+  mut prev_mouse_data: ResMut<MouseData>,
+) {
+  for event in wheel_events.read() {
     let scroll_amount = match event.unit {
       MouseScrollUnit::Line => event.y * 0.1,
       MouseScrollUnit::Pixel => event.y * 0.001,
@@ -155,5 +168,29 @@ fn update_params(mut params: ResMut<Params>, mut mouse_events: EventReader<Mouse
 
     params.zoom *= 1.0 + scroll_amount;
     params.zoom = params.zoom.clamp(0.1, 100.0);
+  }
+
+  if let Some(pos) = window.cursor_position() {
+    let left_just_pressed = button_input.just_pressed(MouseButton::Left);
+    let left_being_pressed = button_input.pressed(MouseButton::Left);
+
+    if left_being_pressed {
+      let old_pos = match prev_mouse_data.pos {
+        Some(existing_data) => existing_data,
+        None => {
+          prev_mouse_data.pos = Some(pos);
+          pos
+        }
+      };
+      prev_mouse_data.pos = Some(pos);
+
+      let delta = (pos - old_pos) / params.zoom;
+
+      //avoids changing center when user is just clicking without dragging
+      if !left_just_pressed {
+        params.center_x = params.center_x - delta.x;
+        params.center_y = params.center_y - delta.y;
+      }
+    }
   }
 }

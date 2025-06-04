@@ -1,10 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use bevy::{
-  asset::Handle,
-  ecs::resource::Resource,
-  image::Image,
-  render::{extract_resource::ExtractResource, render_resource::{Buffer, ShaderType}},
+  asset::Handle, ecs::resource::Resource, image::Image, math::Vec2, render::{extract_resource::ExtractResource, render_resource::{Buffer, ShaderType}}
 };
 use bytemuck::{Pod, Zeroable};
 
@@ -17,8 +14,8 @@ pub struct Params {
   pub buffer_size_x: u32,
   pub buffer_size_y: u32,
   pub buffer_size: u32,
-  pub center_x: u32,
-  pub center_y: u32,
+  pub center_x: f32,
+  pub center_y: f32,
   pub resolution_x: u32,
   pub resolution_y: u32,
   pub zoom: f32,
@@ -32,6 +29,12 @@ pub enum ComputeState {
   #[default]
   STEP,
   WAIT,
+}
+
+
+#[derive(Resource, Default)]
+pub struct MouseData {
+  pub pos: Option<Vec2>
 }
 
 #[derive(Resource, Clone, ExtractResource)]

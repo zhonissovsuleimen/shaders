@@ -2,8 +2,8 @@ struct Params {
   buffer_size_x: u32,
   buffer_size_y: u32,
   buffer_size: u32,
-  center_x: u32,
-  center_y: u32,
+  center_x: f32,
+  center_y: f32,
   resolution_x: u32,
   resolution_y: u32,
   zoom: f32,
@@ -75,8 +75,8 @@ fn display(
     return;
   }
 
-  let adjusted_x = f32(params.center_x) + (f32(id.x) - f32(params.resolution_x) * 0.5) / params.zoom;
-  let adjusted_y = f32(params.center_y) + (f32(id.y) - f32(params.resolution_y) * 0.5) / params.zoom;
+  let adjusted_x = params.center_x + (f32(id.x) - f32(params.resolution_x) * 0.5) / params.zoom;
+  let adjusted_y = params.center_y + (f32(id.y) - f32(params.resolution_y) * 0.5) / params.zoom;
   let outside_bounds = adjusted_x < 0.0 
     || adjusted_y < 0.0 
     || adjusted_x >= 32.0 * f32(params.buffer_size_x) 
