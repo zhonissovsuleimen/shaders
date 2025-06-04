@@ -34,16 +34,8 @@ pub fn prepare_bind_group(
       usage: BufferUsages::COPY_DST | BufferUsages::UNIFORM,
     });
 
-    let mut data_buffer = vec![0u32; params.buffer_size as usize];
-
-    for i in 0..params.buffer_size {
-      for j in 0..32 {
-        let rnd = rand::random_range(0.0..1.0);
-        if rnd > 0.9 {
-          data_buffer[i as usize] |= 1 << j;
-        }
-      }
-    }
+    let buffer_size = params.buffer_size_x * params.buffer_size_y;
+    let data_buffer = vec![0u32; buffer_size as usize];
 
     let buffer = device.create_buffer_with_data(&BufferInitDescriptor {
       label: None,

@@ -13,11 +13,11 @@ pub struct MainImage(pub Handle<Image>);
 pub struct Params {
   pub buffer_size_x: u32,
   pub buffer_size_y: u32,
-  pub buffer_size: u32,
   pub center_x: f32,
   pub center_y: f32,
   pub resolution_x: u32,
   pub resolution_y: u32,
+  pub random_seed: u32,
   pub zoom: f32,
 }
 
@@ -27,6 +27,7 @@ pub struct GpuParamsHandle(pub Buffer);
 #[derive(Resource, ExtractResource, Clone, Default, PartialEq)]
 pub enum ComputeState {
   #[default]
+  RANDOMIZE,
   STEP,
   WAIT,
 }

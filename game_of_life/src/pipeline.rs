@@ -20,6 +20,7 @@ use crate::data_structs::Params;
 pub struct GLPipeline {
   pub layout: BindGroupLayout,
   pub update_pipeline: CachedComputePipelineId,
+  pub randomize_pipeline: CachedComputePipelineId,
   pub display_pipeline: CachedComputePipelineId,
 }
 
@@ -53,6 +54,16 @@ impl FromWorld for GLPipeline {
       zero_initialize_workgroup_memory: false,
     });
 
+    let randomize_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
+      label: None,
+      layout: vec![layout.clone()],
+      push_constant_ranges: vec![],
+      shader: shader.clone(),
+      shader_defs: vec![],
+      entry_point: "randomize".into(),
+      zero_initialize_workgroup_memory: false,
+    });
+
     let display_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
       label: None,
       layout: vec![layout.clone()],
@@ -66,6 +77,7 @@ impl FromWorld for GLPipeline {
     GLPipeline {
       layout,
       update_pipeline,
+      randomize_pipeline,
       display_pipeline,
     }
   }

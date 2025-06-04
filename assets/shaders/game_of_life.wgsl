@@ -1,11 +1,11 @@
 struct Params {
   buffer_size_x: u32,
   buffer_size_y: u32,
-  buffer_size: u32,
   center_x: f32,
   center_y: f32,
   resolution_x: u32,
   resolution_y: u32,
+  random_seed: u32,
   zoom: f32,
 }
 
@@ -65,6 +65,13 @@ fn update(
   }
 }
 
+@compute @workgroup_size(COMPUTE_WG_SIZE)
+fn randomize(
+  @builtin(global_invocation_id) id: vec3<u32>,
+) {
+  buffer[id.x] = random_u32(id);
+}
+
 @compute @workgroup_size(DISPLAY_WG_SIZE, DISPLAY_WG_SIZE)
 fn display(
   @builtin(global_invocation_id) id: vec3<u32>,
@@ -106,4 +113,16 @@ fn ternary(cond: bool, a: u32, b: u32) -> u32 {
   } else {
     return b;
   }
+}
+
+fn random_u32(id: vec3<u32>) -> u32 {
+  var input = params.random_seed + id.x;
+  input ^= 2747636419u;
+  input *= 2654435769u;
+  input ^= (input >> 16u);
+  input *= 2654435769u;
+  input ^= (input >> 16u);
+  input *= 2654435769u;
+
+  return input;
 }

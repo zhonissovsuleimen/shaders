@@ -103,12 +103,10 @@ fn setup(mut commands: Commands, window: Single<&Window>, mut image_assets: ResM
   let cell_count_y = 10000;
   let buffer_size_x = (cell_count_x + 31) / 32;
   let buffer_size_y = cell_count_y;
-  let buffer_size = buffer_size_x * buffer_size_y;
   let center_x = cell_count_x as f32 / 2.0;
   let center_y = cell_count_y as f32 / 2.0;
 
   commands.insert_resource(Params {
-    buffer_size,
     buffer_size_x,
     buffer_size_y,
     resolution_x,
@@ -116,6 +114,7 @@ fn setup(mut commands: Commands, window: Single<&Window>, mut image_assets: ResM
     center_x,
     center_y,
     zoom: 4.0,
+    random_seed: rand::random::<u32>(),
   });
 
   let mut image = Image::new_fill(

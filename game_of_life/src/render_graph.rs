@@ -52,7 +52,8 @@ impl render_graph::Node for GLNode {
       return Ok(());
     };
 
-    let compute_wg = (params.buffer_size + COMPUTE_WG_SIZE - 1) / (COMPUTE_WG_SIZE);
+    let compute_wg =
+      (params.buffer_size_x * params.buffer_size_y + COMPUTE_WG_SIZE - 1) / (COMPUTE_WG_SIZE);
     let display_wg_x = (params.resolution_x + DISPLAY_WG_SIZE - 1) / (DISPLAY_WG_SIZE);
     let display_wg_y = (params.resolution_y + DISPLAY_WG_SIZE - 1) / (DISPLAY_WG_SIZE);
 
@@ -61,14 +62,27 @@ impl render_graph::Node for GLNode {
       .begin_compute_pass(&ComputePassDescriptor::default());
     pass.set_bind_group(0, &bind_group.0, &[]);
 
-    if *state == ComputeState::STEP {
-      let Some(update_pipeline) = pipeline_cache.get_compute_pipeline(pipeline.update_pipeline)
-      else {
-        return Ok(());
-      };
+    match state {
+      ComputeState::RANDOMIZE => {
+        let Some(randomize_pipeline) =
+          pipeline_cache.get_compute_pipeline(pipeline.randomize_pipeline)
+        else {
+          return Ok(());
+        };
 
-      pass.set_pipeline(update_pipeline);
-      pass.dispatch_workgroups(compute_wg, 1, 1);
+        pass.set_pipeline(randomize_pipeline);
+        pass.dispatch_workgroups(compute_wg, 1, 1);
+      }
+      ComputeState::STEP => {
+        let Some(update_pipeline) = pipeline_cache.get_compute_pipeline(pipeline.update_pipeline)
+        else {
+          return Ok(());
+        };
+
+        pass.set_pipeline(update_pipeline);
+        pass.dispatch_workgroups(compute_wg, 1, 1);
+      }
+      ComputeState::WAIT => {}
     }
 
     if let Some(display_pipeline) = pipeline_cache.get_compute_pipeline(pipeline.display_pipeline) {
@@ -84,6 +98,9 @@ impl render_graph::Node for GLNode {
 
     match world.get_resource_mut::<ComputeState>() {
       Some(mut state) => match *state {
+        ComputeState::RANDOMIZE => {
+          *state = ComputeState::STEP;
+        }
         ComputeState::STEP => {
           self.last_step_time = Some(elapsed_secs);
           *state = ComputeState::WAIT;
