@@ -82,7 +82,7 @@ impl render_graph::Node for GLNode {
         pass.set_pipeline(update_pipeline);
         pass.dispatch_workgroups(compute_wg, 1, 1);
       }
-      ComputeState::WAIT => {}
+      _ => {}
     }
 
     if let Some(display_pipeline) = pipeline_cache.get_compute_pipeline(pipeline.display_pipeline) {
@@ -95,9 +95,19 @@ impl render_graph::Node for GLNode {
 
   fn update(&mut self, world: &mut World) {
     let elapsed_secs = world.resource::<Time>().elapsed_secs();
+    let randomize_pipeline = world.resource::<GLPipeline>().randomize_pipeline;
+    let randomize_pipeline_ready = world
+      .resource::<PipelineCache>()
+      .get_compute_pipeline(randomize_pipeline)
+      .is_some();
 
     match world.get_resource_mut::<ComputeState>() {
       Some(mut state) => match *state {
+        ComputeState::INITIAL => {
+          if randomize_pipeline_ready {
+            *state = ComputeState::RANDOMIZE;
+          }
+        }
         ComputeState::RANDOMIZE => {
           *state = ComputeState::STEP;
         }

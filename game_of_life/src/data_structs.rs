@@ -27,6 +27,7 @@ pub struct GpuParamsHandle(pub Buffer);
 #[derive(Resource, ExtractResource, Clone, Default, PartialEq)]
 pub enum ComputeState {
   #[default]
+  INITIAL,
   RANDOMIZE,
   STEP,
   WAIT,
