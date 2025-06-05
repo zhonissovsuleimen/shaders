@@ -22,8 +22,8 @@ use bevy::{
   },
   image::Image,
   input::{
-    ButtonInput, ButtonState,
-    mouse::{MouseButton, MouseButtonInput, MouseScrollUnit, MouseWheel},
+    ButtonInput,
+    mouse::{MouseButton, MouseScrollUnit, MouseWheel},
   },
   log::info,
   math::Vec2,
@@ -36,14 +36,14 @@ use bevy::{
   sprite::Sprite,
   time::common_conditions::on_timer,
   utils::default,
-  window::Window,
+  window::{Window, WindowMoved},
 };
 use pipeline::GLPipeline;
 use render_graph::{GLNode, GLNodeLabel};
 
 use crate::{
   bind_group::sync_params,
-  data_structs::{GpuParamsHandle, MouseData},
+  data_structs::{GpuParamsHandle, MouseData, WindowData},
 };
 
 pub struct GameOfLifePlugin;
@@ -58,6 +58,7 @@ impl Plugin for GameOfLifePlugin {
       print_telemetry.run_if(on_timer(Duration::from_millis(1000))),
     );
     app.add_systems(Update, handle_mouse_input);
+    app.add_systems(Update, handle_window_move);
 
     app.world_mut().commands().spawn(Camera2d);
 
@@ -94,6 +95,7 @@ impl Plugin for GameOfLifePlugin {
 
 fn setup(mut commands: Commands, window: Single<&Window>, mut image_assets: ResMut<Assets<Image>>) {
   commands.insert_resource(MouseData::default());
+  commands.insert_resource(WindowData::default());
   commands.insert_resource(Telemetry::default());
 
   let resolution_x = window.physical_width();
@@ -191,5 +193,28 @@ fn handle_mouse_input(
         params.center_y = params.center_y - delta.y;
       }
     }
+  }
+}
+
+fn handle_window_move(
+  mut params: ResMut<Params>,
+  mut old_window_data: ResMut<WindowData>,
+  mut move_events: EventReader<WindowMoved>,
+) {
+  for event in move_events.read() {
+    let new_pos = event.position;
+
+    let old_pos = match old_window_data.pos {
+      Some(existing_data) => existing_data,
+      None => {
+        old_window_data.pos = Some(new_pos);
+        new_pos
+      }
+    };
+
+    let delta_pos = new_pos - old_pos;
+    params.center_x += (delta_pos.x as f32) / params.zoom;
+    params.center_y += (delta_pos.y as f32) / params.zoom;
+    old_window_data.pos = Some(new_pos);
   }
 }

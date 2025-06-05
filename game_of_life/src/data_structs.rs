@@ -1,7 +1,14 @@
 use std::sync::{Arc, Mutex};
 
 use bevy::{
-  asset::Handle, ecs::resource::Resource, image::Image, math::Vec2, render::{extract_resource::ExtractResource, render_resource::{Buffer, ShaderType}}
+  asset::Handle,
+  ecs::resource::Resource,
+  image::Image,
+  math::{IVec2, Vec2},
+  render::{
+    extract_resource::ExtractResource,
+    render_resource::{Buffer, ShaderType},
+  },
 };
 use bytemuck::{Pod, Zeroable};
 
@@ -33,10 +40,14 @@ pub enum ComputeState {
   WAIT,
 }
 
-
 #[derive(Resource, Default)]
 pub struct MouseData {
-  pub pos: Option<Vec2>
+  pub pos: Option<Vec2>,
+}
+
+#[derive(Resource, Default)]
+pub struct WindowData {
+  pub pos: Option<IVec2>,
 }
 
 #[derive(Resource, Clone, ExtractResource)]
